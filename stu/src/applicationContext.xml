@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+	
+
+	<!-- 创建数据源对象 -->
+	<!-- 初始化数据源:数据库的连接信息:用户名,密码,url,driverClass -->
+	<bean id="ds" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="root"></property>
+		<property name="password" value="root"></property>
+		<property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test"></property>
+		<property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+	</bean>
+	
+	<bean id="sf" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+    	<property name="dataSource" ref="ds"></property>
+    	<property name="hibernateProperties"> 
+    		<props>
+    			<prop key="hibernate.show_sql">true</prop>
+    			<prop key="hibernate.dialect">org.hibernate.dialect.SQLServerDialect</prop>
+    			<prop key="hibernate.hbm2ddl.auto">update</prop>
+    		</props>
+    	</property>
+    	<!-- 映射文件的位置 -->
+		<property name="mappingResources">
+			<list>
+				<value>com/xwd/entity/User.hbm.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+		
+	
+	<bean id="td" class="com.xwd.dao.TestDao">
+		<property name="sf" ref="sf"></property>
+	</bean>
+	
+	<bean id="ts" class="com.xwd.service.TestService">
+		<property name="testdao" ref="td"></property>
+	</bean>
+	
+	<bean id="ta" class="com.xwd.action.TestAction">
+		<property name="testservice" ref="ts"></property>
+	</bean>
+	
+	
+	
+	
+	<!-- 配置声明事务 -->
+	<!-- 创建事务管理器对象 -->
+	<bean id="txManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sf"></property>
+	</bean>
+	
+	
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="add*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="insert*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="save*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="remove*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="delete*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="update*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="modify*" propagation="REQUIRED" read-only="false"/>
+			<tx:method name="getAll*" propagation="REQUIRED" read-only="true"/>
+		</tx:attributes>
+	</tx:advice>
+	 <!--通过aop把代码卡在方法的前后 -->
+	<aop:config>
+		<aop:advisor advice-ref="txAdvice" pointcut="execution(* com.xwd.dao.*.*(..))"/>
+	</aop:config>
+	
+</beans>
